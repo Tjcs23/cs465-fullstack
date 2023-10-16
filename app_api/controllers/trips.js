@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Model = mongoose.model('trips');
+const User = mongoose.model('users');
 
 //GET: /trips - lists all the trips
 const tripsList = async (req, res) => {
@@ -44,6 +45,8 @@ const tripsFindCode = async (req, res) => {
 };
 
 const tripsAddTrip = async (req, res) => {
+    getUser(req, res,
+        (req, res) => {
     Model
         .create({
             code: req.body.code,
@@ -67,9 +70,13 @@ const tripsAddTrip = async (req, res) => {
             }
         });
     }
+    );
+}
 
     const tripsUpdateTrip = async (req, res) => {
         console.log(req.body);
+        getUser(req, res,
+            (req, res) => {
         Model
             .findOneAndUpdate({ 'code': req.params.tripCode }, {
                 code: req.body.code,
@@ -103,6 +110,43 @@ const tripsAddTrip = async (req, res) => {
             .json(err);
         });
     }
+        );
+}
+
+const getUser = (req, res, callback) => {
+    if (req.auth && req.auth.email) {
+        User
+            .findOne({ email : req.auth.email })
+            .exec((err, user) => {
+                if (!user) {
+                    return res  
+                        .status(404)
+                        .json({"message": "Email not found"});
+                } else if (err) {
+                    console.log(err);
+                    return res
+                        .status(404)
+                        .json(err);
+
+                }
+                callback(req, 
+                    res.json({"message": "User found"}), 
+                    console.log('callback'),
+                    console.log(req.auth)
+                    
+                    );
+
+
+                });
+    } else {
+        
+        return res
+            .status(404)
+            .json({"message": "User was not found"});
+          
+            
+    }
+};
 
 module.exports = {
     tripsList,
